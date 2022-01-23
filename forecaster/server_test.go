@@ -39,27 +39,27 @@ func TestWeeklyForecastServer(t *testing.T) {
 		}
 	})
 
-	t.Run("returns 500 error if the request parameter lat is not in valid range", func(t *testing.T) {
+	t.Run("returns 400 error if the request parameter lat is not in valid range", func(t *testing.T) {
 		request := httptest.NewRequest("GET", "/weekly", nil)
 		query := url.Values{"lat": {"100.0"}, "lon": {"0.0"}}
 		request.URL.RawQuery = query.Encode()
 		writer := httptest.NewRecorder()
 		server := NewServer(MockDailyForecastProvider{})
 		server.ServeHTTP(writer, request)
-		if writer.Code != http.StatusInternalServerError {
-			t.Errorf("Expected status code %v, got %v", http.StatusInternalServerError, writer.Code)
+		if writer.Code != http.StatusBadRequest {
+			t.Errorf("Expected status code %v, got %v", http.StatusBadRequest, writer.Code)
 		}
 	})
 
-	t.Run("returns 500 error if the request parameter lon is not in valid range", func(t *testing.T) {
+	t.Run("returns 400 error if the request parameter lon is not in valid range", func(t *testing.T) {
 		request := httptest.NewRequest("GET", "/weekly", nil)
 		query := url.Values{"lat": {"0.0"}, "lon": {"-250.0"}}
 		request.URL.RawQuery = query.Encode()
 		writer := httptest.NewRecorder()
 		server := NewServer(MockDailyForecastProvider{})
 		server.ServeHTTP(writer, request)
-		if writer.Code != http.StatusInternalServerError {
-			t.Errorf("Expected status code %v, got %v", http.StatusInternalServerError, writer.Code)
+		if writer.Code != http.StatusBadRequest {
+			t.Errorf("Expected status code %v, got %v", http.StatusBadRequest, writer.Code)
 		}
 	})
 }
