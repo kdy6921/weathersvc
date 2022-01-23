@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -14,6 +13,14 @@ type Server struct {
 
 func NewServer(provider DailyForecastProvider) *Server {
 	return &Server{provider: provider}
+}
+
+func (s *Server) routine(w http.ResponseWriter, lat float64, lon float64, day int, res chan APIClientResponse) {
+	apiResponse, err := s.provider.GetDailyForecast(lat, lon, day)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	res <- apiResponse
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -51,23 +58,21 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dlist := []DailyForecast{}
+	days := []int{1, 2, 3, 4, 5, 6, 7}
 
-	for i := 1; i <= 7; i++ {
-		apiResponse, err := s.provider.GetDailyForecast(lat, lon, i)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		fmt.Printf("API Response: %+v\n", apiResponse)
+	c := make(chan APIClientResponse, len(days))
 
+	for _, day := range days {
+		go s.routine(w, lat, lon, day, c)
+		res := <-c
 		dforecast := DailyForecast{
-			time.Unix(apiResponse.Timestamp, 0).Format("2006-01-02"),
-			code2msg(apiResponse.Code),
+			time.Unix(res.Timestamp, 0).Format("2006-01-02"),
+			code2msg(res.Code),
 			Temperature{
-				apiResponse.MinTemp,
-				apiResponse.MaxTemp,
+				res.MinTemp,
+				res.MaxTemp,
 			},
-			apiResponse.Rain,
+			res.Rain,
 		}
 		dlist = append(dlist, dforecast)
 	}
