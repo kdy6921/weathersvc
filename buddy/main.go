@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kdy6921/weathersvc/buddy/utils"
+	"buddy/utils"
 )
 
 func main() {
@@ -36,35 +36,35 @@ func main() {
 			return
 		}
 		tmp := utils.Forecast{
-			t.Unix(),
-			v.Weather,
-			v.Temperature.Min,
-			v.Temperature.Max,
-			v.Rain,
+			Date:    t.Unix(),
+			Weather: v.Weather,
+			Min:     v.Temperature.Min,
+			Max:     v.Temperature.Max,
+			Rain:    v.Rain,
 		}
 		vo.Forecasts = append(vo.Forecasts, tmp)
 	}
 	vo.Sort()
 
 	if vo.IsRainyTomorrow() {
-		fmt.Print("내일은 비가 내릴 예정입니다!")
+		fmt.Print("내일은 비가 내릴 예정입니다!\n")
 		return
 	}
 
 	if vo.IsThreeDaysRainy() {
-		fmt.Print("이번주 내내 비 소식이 있어요.")
+		fmt.Print("이번주 내내 비 소식이 있어요.\n")
 		return
 	}
 
-	if vo.IsThreeDaysRainy() {
-		fmt.Print("날씨가 약간은 칙칙해요")
+	if vo.IsThreeDaysCloudy() {
+		fmt.Print("날씨가 약간은 칙칙해요\n")
 		return
 	}
 
-	if vo.IsThreeDaysRainy() {
-		fmt.Print("일주일 내내 날씨가 맑아요!")
+	if vo.IsFiveDaysSunny() {
+		fmt.Print("일주일 내내 날씨가 맑아요!\n")
 		return
 	}
 
-	fmt.Print("맑은 날씨를 즐기세요.")
+	fmt.Print("맑은 날씨를 즐기세요.\n")
 }
