@@ -60,10 +60,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	dlist := []DailyForecast{}
 	days := []int{1, 2, 3, 4, 5, 6, 7}
 
-	c := make(chan APIClientResponse, len(days))
+	c := make(chan APIClientResponse)
 
 	for _, day := range days {
 		go s.routine(w, lat, lon, day, c)
+	}
+
+	for range days {
 		res := <-c
 		dforecast := DailyForecast{
 			time.Unix(res.Timestamp, 0).Format("2006-01-02"),
@@ -76,7 +79,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		dlist = append(dlist, dforecast)
 	}
-
 	forecast := WeeklyForecast{dlist}
 	payload, err := json.Marshal(forecast)
 	if err != nil {
