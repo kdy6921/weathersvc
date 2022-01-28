@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -13,13 +14,23 @@ import (
 )
 
 var (
-	host = os.Getenv("API_HOST")
+	host    = os.Getenv("API_HOST")
+	apiPath = "weekly"
 )
 
 func main() {
 	pos := utils.GetCurrentGeoPosition()
-	resp, err := http.Get(fmt.Sprintf("%s/weekly?lat=%f&lon=%f", host, pos.Latitude, pos.Longitude))
-	fmt.Println(host)
+	u, err := url.Parse(host)
+	if err != nil {
+		log.Fatal("host is invalid")
+	}
+	u.Path = apiPath
+	q := u.Query()
+	q.Set("lat", fmt.Sprint(pos.Latitude))
+	q.Set("lon", fmt.Sprint(pos.Longitude))
+	u.RawQuery = q.Encode()
+
+	resp, err := http.Get(u.String())
 	if err != nil {
 		log.Fatal("API is broken")
 	}
@@ -50,7 +61,6 @@ func main() {
 		}
 		vo.Forecasts = append(vo.Forecasts, tmp)
 	}
-	vo.Sort()
 
 	if vo.IsRainyTomorrow() {
 		fmt.Print("내일은 비가 내릴 예정입니다!\n")
