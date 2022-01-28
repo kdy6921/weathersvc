@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -21,6 +23,47 @@ func (s *Server) routine(w http.ResponseWriter, lat float64, lon float64, day in
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	res <- apiResponse
+}
+
+func (s *Server) callAPI(lat float64, lon float64, w http.ResponseWriter) error {
+	days := []int{1, 2, 3, 4, 5, 6, 7}
+	clist := []APIClientResponse{}
+
+	c := make(chan APIClientResponse)
+
+	for _, day := range days {
+		go s.routine(w, lat, lon, day, c)
+	}
+
+	for range days {
+		res := <-c
+		clist = append(clist, res)
+	}
+	sort.Slice(clist, func(i, j int) bool {
+		return clist[i].Timestamp < clist[j].Timestamp
+	})
+	dlist := []DailyForecast{}
+	for _, v := range clist {
+		dforecast := DailyForecast{
+			time.Unix(v.Timestamp, 0).Format("2006-01-02"),
+			code2msg(v.Code),
+			Temperature{
+				v.MinTemp,
+				v.MaxTemp,
+			},
+			v.Rain,
+		}
+		dlist = append(dlist, dforecast)
+	}
+	forecast := WeeklyForecast{dlist}
+	payload, err := json.Marshal(forecast)
+	if err != nil {
+		return fmt.Errorf("internal error")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(payload)
+	return nil
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -57,35 +100,19 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dlist := []DailyForecast{}
-	days := []int{1, 2, 3, 4, 5, 6, 7}
+	c := make(chan error, 1)
+	go func() {
+		c <- s.callAPI(lat, lon, w)
+	}()
 
-	c := make(chan APIClientResponse)
-
-	for _, day := range days {
-		go s.routine(w, lat, lon, day, c)
-	}
-
-	for range days {
-		res := <-c
-		dforecast := DailyForecast{
-			time.Unix(res.Timestamp, 0).Format("2006-01-02"),
-			code2msg(res.Code),
-			Temperature{
-				res.MinTemp,
-				res.MaxTemp,
-			},
-			res.Rain,
+	select {
+	case res := <-c:
+		if res != nil {
+			http.Error(w, res.Error(), http.StatusInternalServerError)
+			return
 		}
-		dlist = append(dlist, dforecast)
-	}
-	forecast := WeeklyForecast{dlist}
-	payload, err := json.Marshal(forecast)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+	case <-time.After(2 * time.Second):
+		http.Error(w, "Timeout", http.StatusInternalServerError)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(payload)
 }

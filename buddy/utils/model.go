@@ -1,9 +1,5 @@
 package utils
 
-import (
-	"sort"
-)
-
 type ForecastResponse struct {
 	Forecasts []struct {
 		Date        string `json:"date"`
@@ -33,13 +29,6 @@ type Alarm interface {
 	IsThreeDaysRainy() bool
 	IsThreeDaysCloudy() bool
 	IsFiveDaysSunny() bool
-	Sort()
-}
-
-func (v *VO) Sort() {
-	sort.Slice(v.Forecasts, func(i, j int) bool {
-		return v.Forecasts[i].Date < v.Forecasts[j].Date
-	})
 }
 
 func (v *VO) IsRainyTomorrow() bool {
