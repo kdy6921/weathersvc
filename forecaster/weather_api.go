@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 )
 
 type APIClientResponse struct {
@@ -26,6 +27,8 @@ type APIClient struct {
 	apiKey  string
 }
 
+var apiPath = "forecast/daily"
+
 // NewAPIClient creates a new APIClient
 func NewAPIClient(baseURL string, apiKey string) APIClient {
 	return APIClient{baseURL: baseURL, apiKey: apiKey}
@@ -45,8 +48,19 @@ func (c APIClient) GetDailyForecast(lat float64, lon float64, dateOffset int) (A
 		return APIClientResponse{}, fmt.Errorf("dateOffset(%d) is invalid", dateOffset)
 	}
 
-	url := fmt.Sprintf("%s/forecast/daily?lat=%f&lon=%f&date_offset=%d&api_key=%s", c.baseURL, lat, lon, dateOffset, c.apiKey)
-	resp, err := http.Get(url)
+	u, err := url.Parse(c.baseURL)
+	if err != nil {
+		return APIClientResponse{}, err
+	}
+	u.Path = apiPath
+	q := u.Query()
+	q.Set("lat", fmt.Sprint(lat))
+	q.Set("lon", fmt.Sprint(lon))
+	q.Set("date_offset", fmt.Sprint(dateOffset))
+	q.Set("api_key", c.apiKey)
+	u.RawQuery = q.Encode()
+
+	resp, err := http.Get(u.String())
 	if err != nil {
 		return APIClientResponse{}, err
 	}

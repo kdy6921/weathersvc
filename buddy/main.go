@@ -6,14 +6,20 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"buddy/utils"
 )
 
+var (
+	host = os.Getenv("API_HOST")
+)
+
 func main() {
 	pos := utils.GetCurrentGeoPosition()
-	resp, err := http.Get(fmt.Sprintf("http://localhost:8080/weekly?lat=%f&lon=%f", pos.Latitude, pos.Longitude))
+	resp, err := http.Get(fmt.Sprintf("%s/weekly?lat=%f&lon=%f", host, pos.Latitude, pos.Longitude))
+	fmt.Println(host)
 	if err != nil {
 		log.Fatal("API is broken")
 	}
