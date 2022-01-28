@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func getForecasts(filename string) utils.VO {
+func getForecasts(filename string) utils.WeeklyForecast {
 	res, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Fatal("invalid filename")
@@ -20,7 +20,7 @@ func getForecasts(filename string) utils.VO {
 	if err != nil {
 		log.Fatal("invalid json")
 	}
-	var vo utils.VO
+	var vo utils.WeeklyForecast
 	for _, v := range fr.Forecasts {
 		t, err := time.Parse("2006-01-02", v.Date)
 		if err != nil {
