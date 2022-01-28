@@ -12,7 +12,7 @@ type ForecastResponse struct {
 	} `json:"forecasts"`
 }
 
-type VO struct {
+type WeeklyForecast struct {
 	Forecasts []Forecast
 }
 
@@ -31,13 +31,13 @@ type Alarm interface {
 	IsFiveDaysSunny() bool
 }
 
-func (v *VO) IsRainyTomorrow() bool {
-	return v.Forecasts[0].Weather == "rainy"
+func (w *WeeklyForecast) IsRainyTomorrow() bool {
+	return w.Forecasts[0].Weather == "rainy"
 }
 
-func (v *VO) IsThreeDaysRainy() bool {
+func (w *WeeklyForecast) IsThreeDaysRainy() bool {
 	count := 0
-	for _, forecast := range v.Forecasts {
+	for _, forecast := range w.Forecasts {
 		if forecast.Weather == "rainy" {
 			count++
 		}
@@ -45,9 +45,9 @@ func (v *VO) IsThreeDaysRainy() bool {
 	return count >= 3
 }
 
-func (v *VO) IsThreeDaysCloudy() bool {
+func (w *WeeklyForecast) IsThreeDaysCloudy() bool {
 	count := 0
-	for _, forecast := range v.Forecasts {
+	for _, forecast := range w.Forecasts {
 		if forecast.Weather == "cloudy" {
 			count++
 		}
@@ -55,9 +55,9 @@ func (v *VO) IsThreeDaysCloudy() bool {
 	return count >= 3
 }
 
-func (v *VO) IsFiveDaysSunny() bool {
+func (w *WeeklyForecast) IsFiveDaysSunny() bool {
 	count := 0
-	for _, forecast := range v.Forecasts {
+	for _, forecast := range w.Forecasts {
 		if forecast.Weather == "clear" {
 			count++
 		}
